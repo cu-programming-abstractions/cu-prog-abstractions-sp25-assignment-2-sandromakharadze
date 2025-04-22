@@ -1,17 +1,68 @@
 #include "RisingTides.h"
+#include "queue.h"
 using namespace std;
+
+bool isGridLocationFlooded(const Grid<double>& terrain,
+                            GridLocation grid_location,
+                            double height) {
+    double grid_location_height = terrain.get(grid_location);
+    if (grid_location_height <= height){
+        return true;
+    }
+    else{
+        return false;
+    }
+
+}
+
+Vector<GridLocation> generateCardinalLocs(GridLocation grid_location_check){
+    GridLocation check_up = grid_location_check;
+    check_up.row--;
+    GridLocation check_down = grid_location_check;
+    check_down.row++;
+    GridLocation check_left = grid_location_check;
+    check_left.col--;
+    GridLocation check_right = grid_location_check;
+    check_right.col++;
+    Vector<GridLocation> cardinal_locations = {check_up, check_down, check_left, check_right};
+    return cardinal_locations;
+}
 
 Grid<bool> floodedRegionsIn(const Grid<double>& terrain,
                             const Vector<GridLocation>& sources,
                             double height) {
-    /* TODO: Delete this line and the next four lines, then implement this function. */
-    (void) terrain;
-    (void) sources;
-    (void) height;
-    return {};
+    int nRows = terrain.numRows();
+    int nCols = terrain.numCols();
+    Grid<bool> floodMap(nRows, nCols, false);
+
+    Queue<GridLocation> checkFloodQueue;
+
+    int num_sources = sources.size();
+    for (int i = 0; i < num_sources; i++){
+        double grid_location_height = terrain.get(sources[i]);
+        if (grid_location_height <= height){
+            floodMap.set(sources[i], true);
+            checkFloodQueue.enqueue(sources[i]);
+        }
+    }
+    while (!checkFloodQueue.isEmpty()){
+        GridLocation grid_location_check = checkFloodQueue.dequeue();
+        Vector<GridLocation> cardinal_locations = generateCardinalLocs(grid_location_check);
+
+        for (int i = 0; i < cardinal_locations.size(); i++){
+            if (terrain.inBounds(cardinal_locations[i])){
+                if (isGridLocationFlooded(terrain, cardinal_locations[i], height)){
+                    if (floodMap.get(cardinal_locations[i])==false){
+                        floodMap.set(cardinal_locations[i], true);
+                        checkFloodQueue.enqueue(cardinal_locations[i]);
+                    }
+                }
+            }
+        }
+    }
+
+    return floodMap;
 }
-
-
 
 /***** Test Cases Below This Point *****/
 #include "GUI/SimpleTest.h"

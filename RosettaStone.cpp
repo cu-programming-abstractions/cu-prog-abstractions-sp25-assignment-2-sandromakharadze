@@ -1,50 +1,105 @@
 #include "RosettaStone.h"
 #include "GUI/SimpleTest.h"
+#include "priorityqueue.h"
 using namespace std;
 
 Map<string, double> kGramsIn(const string& str, int kGramLength) {
-    /* TODO: Delete this comment and the other lines here, then implement
-     * this function.
-     */
-    (void) str;
-    (void) kGramLength;
-    return {};
+    Map<string, double> kgramMap;
+
+    if (kGramLength <= 0) {
+        error("kGramLength must be positive");
+    }
+
+    if (kGramLength > str.length()) {
+        return kgramMap;
+    }
+
+    for (int i = 0; i <= str.length() - kGramLength; i++) {
+        string kgram = str.substr(i, kGramLength);
+        kgramMap[kgram]++;
+    }
+
+    return kgramMap;
 }
 
 Map<string, double> normalize(const Map<string, double>& input) {
-    /* TODO: Delete this comment and the other lines here, then implement
-     * this function.
-     */
-    (void) input;
-    return {};
+    Map<string, double> result;
+    double sum = 0;
+
+    for (const string &key : input) {
+        sum += input[key] * input[key];
+    }
+
+    if (sum == 0){
+        error("Cannot normalize an empty map or a map with all zero values");
+    }
+
+    for (const string &key : input) {
+        result[key] = input[key] / sqrt(sum);
+    }
+
+    return result;
 }
 
 Map<string, double> topKGramsIn(const Map<string, double>& source, int numToKeep) {
-    /* TODO: Delete this comment and the other lines here, then implement
-     * this function.
-     */
-    (void) source;
-    (void) numToKeep;
-    return {};
+    if (numToKeep < 0) {
+        error("numToKeep must be positive");
+    }
+
+    Map<string, double> result;
+
+    if (numToKeep == 0 || source.isEmpty()) {
+        return result;
+    }
+
+    PriorityQueue<string> pq;
+
+    for (const string &key : source) {
+        pq.enqueue(key, -source[key]);
+    }
+
+    for (int i = 0; i < numToKeep && !pq.isEmpty(); i++) {
+        string kgram = pq.dequeue();
+        result[kgram] = source[kgram];
+    }
+
+    return result;
 }
 
 double cosineSimilarityOf(const Map<string, double>& lhs, const Map<string, double>& rhs) {
-    /* TODO: Delete this comment and the other lines here, then implement
-     * this function.
-     */
-    (void) lhs;
-    (void) rhs;
-    return {};
+    double dot = 0.0;
+
+    const Map<string, double>& smaller = (lhs.size() < rhs.size()) ? lhs : rhs;
+    const Map<string, double>& larger = (lhs.size() < rhs.size()) ? rhs : lhs;
+
+    for (const string &key : smaller) {
+        if (larger.containsKey(key)) {
+            dot += smaller[key] * larger[key];
+        }
+    }
+
+    return dot;
 }
 
 string guessLanguageOf(const Map<string, double>& textProfile,
                        const Set<Corpus>& corpora) {
-    /* TODO: Delete this comment and the other lines here, then implement
-     * this function.
-     */
-    (void) textProfile;
-    (void) corpora;
-    return "";
+    if (corpora.isEmpty()) {
+        error("No corpora available to guess language");
+    }
+
+    string guessLanguage;
+    double bestSimilarity = -1.0;
+
+    for (const Corpus& corpus : corpora) {
+        double similarity = cosineSimilarityOf(textProfile, corpus.profile);
+
+        if (similarity > bestSimilarity) {
+            bestSimilarity = similarity;
+            guessLanguage = corpus.name;
+        }
+    }
+
+    return guessLanguage;
 }
 
 
